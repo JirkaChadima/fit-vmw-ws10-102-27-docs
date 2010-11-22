@@ -13,14 +13,15 @@
 \begin{center}
 \bf MI-VMW 2010/2011\\[2mm]
     \begin{Large}Flickr - feature-based reranking\end{Large}\\[3mm]
-       Jiří Mašek a Jiří Chadima\\
+       Jiří Mašek (masekji4@fit.cvut.cz)\\
+       Jiří Chadima (chadijir@fit.cvut.cz)\\
 9.\,12.\,2010
 \end{center}
 
 \section{Zadání}
-Cílem naší semestrální práce je vytvořit webovou aplikaci, která by uživatelům umožňovala vyhledávat obrázky na serveru Flickr \cite{flickr} pomocí klíčových slov a~zároveň podle převažující barvy.
+Cílem naší semestrální práce je vytvořit webovou aplikaci, která by našim uživatelům umožňovala vyhledávat obrázky na serveru Flickr \cite{flickr} pomocí klíčových slov a~zároveň podle převažující barvy.
 
-V~práci tedy musíme vyřešit několik úloh: získání výsledku vyhledávání podle klíčových slov ze serveru Flickr.com, extrahování vlastností ze získaných obrázků a~seřazení obrázků podle zadaných parametrů.
+V~práci tedy musíme vyřešit několik úloh: získání výsledku vyhledávání podle klíčových slov ze serveru Flickr.com, extrakce vlastností ze získaných obrázků a~seřazení obrázků podle zadaných parametrů.
 
 Podobnou funkcionalitu nabízí například služba Google Images \cite{GoogleImages}.
 
@@ -28,54 +29,69 @@ Podobnou funkcionalitu nabízí například služba Google Images \cite{GoogleIm
 
 Rozhodli jsme se použít programovací jazyk Java. Protože nedílnou součástí naší práce je i~webové rozhraní, použijeme variantu Java Enterprise Edition (Java EE). Jako aplikační platformu jsme vybrali volně dostupný, veřejně přístupný a~snadno škálovatelný systém Google App Engine \cite{GoogleAE}, který zdarma poskytuje serverový prostor pro aplikace naprogramované i~v~Java EE.
 
+Pro vývoj jsme použili verzovací systém git, konkrétně veřejně přístupný portál github.com \cite{official}. Pokud je v textu odkazováno k~nějaké vývojové větvi, naleznete ji právě tam.
+
 \section{Získávání obrázků ze serveru Flickr}
 
 ... popis API, volani v Jave ...
 
 \section{Hodnocení obrázků}
-Pro hodnocení a~řazení obrázků podle barev se nabízí relativně mnoho postupů a~algoritmů, my jsme se v~naší práci rozhodli zaměřit na rychlost a~zpracování výsledků pokud možno v~reálném čase. Běžnou praxí podobných vyhledávačů je totiž stažení nějakého většího vzorku obrázků, jejich off-line ohodnocení a~posléze uživateli nabízí jen vyhledávání v~této omezené databázi.
+Pro hodnocení a~řazení obrázků podle referenční barvy se nabízí relativně mnoho postupů a~algoritmů, my jsme se v~naší práci rozhodli zaměřit na rychlost a~zpracování výsledků pokud možno v~reálném čase. Běžnou praxí podobných vyhledávačů je totiž stažení nějakého většího vzorku obrázků, jejich off-line ohodnocení a~posléze uživateli nabízí jen vyhledávání v~této omezené databázi.
 
 Naše implementace se naopak snaží uživateli nabídnout vždy ty poslední fotografie k~daným klíčovým slovům, ačkoliv se některé vypočítané hodnoty ukládají do cache tak, aby časově náročné výpočty probíhaly pokud možno pro každou fotografii jen jednou.
 
 \subsection{Možnosti porovnávání}
-První možností, která se nabízí pro srovnávání barevnosti obrázků s~referenční barvou je metoda popsaná v~\cite{Mueller2k9}. Ta je založená na vytvoření sady referenčních barev, k~nimž se vztahuje barva jednotlivých pixelů v~obrázku. Po analýze pixelů tak vznikne histogram této omezené palety, pomocí něhož se dá spočítat vzdálenost různých obrázků vůči referenční barvě, která je rovněž namapována do základní omezené palety barev. Tato metoda se vyznačuje tím, že se výsledná sada obrázků dá velice snadno dále třídit podle dalších barev.
+První možností, která se nabízí pro srovnávání barevnosti obrázků s~referenční barvou je metoda popsaná v~\cite{Mueller2k9}. Ta je založená na vytvoření omezené palety barev, na něž se mapuje barva jednotlivých pixelů v~obrázku. Po analýze pixelů tak vznikne histogram této omezené palety, pomocí něhož se dá spočítat vzdálenost různých obrázků vůči referenční barvě, která je rovněž namapována do základní omezené palety barev. Tato metoda se vyznačuje tím, že se výsledná sada obrázků dá velice snadno dále třídit podle dalších barev.
 
-Druhou variantou, která okamžitě vytane na mysli je porovnávání obrázků založené na klasickém RGB histogramu. Jakmile máme spočítaný histogram obrázku, můžeme volit různé metriky pro počítání vzdálenosti od referenční barvy.
+Druhou variantou, která okamžitě vytane na mysl je porovnávání obrázků založené na klasickém RGB histogramu. Jakmile máme spočítaný histogram obrázku, můžeme volit různé metriky pro počítání vzdálenosti od referenční barvy.
 
 \subsection{Extrahované vlastnosti}
 
-V~průběhu implementace jsme zkoušeli subjektivně porovnávat obě metody, a~přišlo nám, že na omezenou sadu obrázků, kterou jsme schopni zpracovat v~pseudo-reálném čase fungují o~něco lépe metody založené na porovnávání RGB histogramů.
+V~průběhu implementace jsme zkoušeli subjektivně porovnávat obě metody, a~přišlo nám, že na omezenou sadu obrázků, kterou jsme schopni zpracovat v~pseudo-reálném čase fungují o~něco lépe metody založené na porovnávání RGB histogramů. Co se týče výpočetní a~časové náročnosti, jsou obě metody v~podstatě srovnatelné. Implementace algoritmu vycházejícího z~\cite{Mueller2k9} je dostupná v~repozitáři \cite{official} ve vývojové větvi \textbf{piximilarlike}.
 
-Po získání výsledků ze serveru Flickr tak dochází k~výpočtu histogramu pro každý obrázek pro všechny tři kanály RGB. Takto získaný histogram je uložen do databáze, kde se uchovává pro budoucí výpočty.
+Po získání výsledků vyhledávání ze serveru Flickr tak dochází k~výpočtu histogramu pro každý obrázek pro všechny tři kanály barevného prostoru RGB. Takto získaný histogram je uložen do databáze, kde se uchovává pro budoucí výpočty se stejným obrázkem.
 
 \subsection{Podobnost k referenční barvě}
 
-Pro modelování podobnosti jsme po dlouhém zkoušení a~zkoumání došli k~metodě, která na první pohled nemusí vypadat zcela dokonale, nicméně pro danou aplikaci podává subjektivně nejlepší řešení v~rozumném čase. Charakteristické číslo pro každý obrázek, podle kterého budeme obrázky na závěr řadit, budeme označovat jako \textbf{váhu obrázku}.
+Pro modelování podobnosti jsme zkoušeli několik metod s~různými úpravami, vždy jsme se však museli držet relativně nízké výpočetní náročnosti kvůli omezení na zpracování v~pseudo-reálném čase.
 
-Váha obrázku se skládá ze součtu tří charakteristických čísel vycházejících z~histogramů jednotlivých složek RGB modelu. Tato charakteristická čísla jsou počítána podle následujícího algoritmu, kde \texttt{EPSILON} je předem zvolená konstanta, \texttt{baseIndex} je hodnota příslušného kanálu z~referenční barvy a~\texttt{HIST\_SIZE} je šíře histogramu pevně nastavená na 256.
+Nejprve jsme zkoušeli obrázky řadit podle vážené euklidovské vzdálenosti mezi referenční barvou a~nejčastější barvou nacházející se ve spočítaném histogramu (vývojová větev \textbf{peakdistance}). Výsledky takových porovnání nás však příliš neuspokojily a~snažili jsme se nalézt jiné metody.
+
+Nakonec jsme došli k~metodě, která na první pohled nemusí vypadat zcela dokonale, nicméně pro danou aplikaci podává subjektivně poměrně dobré řešení v~rozumném čase. Charakteristické číslo pro každý obrázek, podle kterého budeme obrázky v~této variantě řadit, budeme označovat jako \textbf{váhu obrázku}.
+
+Váha obrázku se vždy skládá ze součtu tří charakteristických čísel vychá-zejících z~histogramů jednotlivých složek RGB modelu. Tato charakteristická čísla jsou počítána podle následujícího algoritmu, kde \texttt{EPSILON} je předem stanovená konstanta, \texttt{baseIndex} je hodnota příslušného kanálu z~referenční barvy a~\texttt{HIST\_SIZE} je šíře histogramu pevně nastavená na 256.
 
 \begin{listing}
 \begin{verbatim}
 for (int i = baseIndex - EPSILON; i < baseIndex + EPSILON; i++) {
     if (i >= PhotoHistogram.HIST_SIZE) { break; }
     if (i < 0) { continue; }
-    sum += (histogram.getValue(color, i) * (i - baseIndex == 0 ? 1 : Math.abs(i - baseIndex)));
+    sum += histogram.getValue(color, i) *
+        (i - baseIndex == 0 ? 1 : Math.abs(i - baseIndex));
     ++values;
 }
 return (sum / values == 0.0 ? Double.MAX_VALUE : sum / values);
 \end{verbatim}
 \end{listing}
 
-Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. Na závěr je ještě spočítán aritmetický průměr a~případná nula je nahrazena za nekonečno. To zajišťuje, že histogramy neobsahující žádnou barvu budou mít největší váhu. Naopak obrázky obsahující pouze referenční barvu budou mít váhu poměrně nízkou.
+Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. Na závěr je ještě spočítán aritmetický průměr a~případná nula je nahrazena za nekonečno. To zajišťuje, že histogramy obsahující pouze nuly budou mít největší váhu. Naopak obrázky obsahující pouze referenční barvu budou mít váhu poměrně nízkou.
 
 Algoritmus se dá ladit volením hodnoty konstanty \texttt{EPSILON}. Subjektivně nejlepší výsledky algoritmus podává paradoxně při takové hodnotě, kdy se ve smyčce projde celá šířka histogramu.
 
+Zvolený algoritmus má jistě celou řadu menších či větších nedostatků, například není použita žádná metoda normalizace histogramů. To znamená, že obrázky menších rozměrů mají teoretickou výhodu, protože součet jejich histogramů by měl být menší. Jelikož však načítáme obrázky ze serveru Flickr, které všechny mají stejnou velikost, můžeme tento faktor zřejmě zanedbat.
+
+Na druhou stranu se nám subjektivně zdá, že pro zvolenou aplikaci běžící takřka v~reálném čase je algoritmus poměrně slušně použitelný a~z~námi vyzkoušených metod na vždy omezeném vzorku také v praxi relativně slušně použitelný. Je ale bohužel pravdou, že ne vždy jsou výsledky uspokojivé.
+
 \section{Implementační poznámky}
+
+Google App Engine bohužel neumožňuje použití některých standardních knihoven a~tříd jazyka Java, a~proto jsme museli v~některých částech aplikace sáhnout k~náhradním řešení.
+
+Naše aplikace tak například musí obsahovat vlastní implementaci dekodéru formátu JPEG, který jsme převzali z~\cite{Dersch}.
 
 \section{Závěr}
 
 \renewcommand{\refname}{Literatura}
-\bibliographystyle{plain}
+\bibliographystyle{ieeetr}
 {
  \bibliography{refs}
 }
