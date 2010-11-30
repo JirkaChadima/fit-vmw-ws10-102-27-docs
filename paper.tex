@@ -33,7 +33,25 @@ Pro vývoj jsme použili verzovací systém git, konkrétně veřejně přístup
 
 \section{Získávání obrázků ze serveru Flickr}
 
-... popis API, volani v Jave ...
+Vzhledem k volbě programovacího jazyku bylo pro přístup k API služby Flickr nejjednodušším řešením využití existující knihovny flickrj \cite{flickrj}. Práce s ní je přitom velice jednoduchá, jak ukazuje následující příklad.
+
+\begin{listing}
+\begin{verbatim}
+Flickr flickr = new Flickr(API_KEY, SHARED_SECRET, new REST());
+
+SearchParameters sp = new SearchParameters();
+        
+sp.setText(keyword);
+
+PhotoList result = flickr.getPhotosInterface().search(sp, perPage, page);
+\end{verbatim}
+\end{listing}
+
+Výsledkem této sekvence kódu je seznam objektů vyhovujících zadaným parametrům a nacházejících se na dané straně při určeném počtu výsledků na jedné straně.
+
+Tyto objekty v sobě nesou bližší informace o konkrétní fotografii, kterou reprezentují. Jsou jimi např. identifikátor, rozměry, URL náhledů v různých velikostech, atd. Objekt taktéž obsahuje metody, které umožňují získat fotografii k dalšímu zpracování rovnou v podobě objektu BufferedImage.
+
+V této souvislosti práce rovněž impelentuje jednoduchou cache, která uchovává posledních 50 výsledků hledání, čímž výrazně zrychluje její chod při opakování dotazu se stejným klíčovým slovem.
 
 \section{Hodnocení obrázků}
 Pro hodnocení a~řazení obrázků podle referenční barvy se nabízí relativně mnoho postupů a~algoritmů, my jsme se v~naší práci rozhodli zaměřit na rychlost a~zpracování výsledků pokud možno v~reálném čase. Běžnou praxí podobných vyhledávačů je totiž stažení nějakého většího vzorku obrázků, jejich off-line ohodnocení a~posléze uživateli nabízí jen vyhledávání v~této omezené databázi.
