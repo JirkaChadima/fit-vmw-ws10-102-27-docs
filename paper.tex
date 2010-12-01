@@ -70,25 +70,32 @@ for (int i = baseIndex - EPSILON; i < baseIndex + EPSILON; i++) {
         (i - baseIndex == 0 ? 1 : Math.abs(i - baseIndex));
     ++values;
 }
-return (sum / values == 0.0 ? Double.MAX_VALUE : sum / values);
+return (sum == 0.0 ? Double.MAX_VALUE : sum);
 \end{verbatim}
 \end{listing}
 
-Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. Na závěr je ještě spočítán aritmetický průměr a~případná nula je nahrazena za nekonečno. To zajišťuje, že histogramy obsahující pouze nuly budou mít největší váhu. Naopak obrázky obsahující pouze referenční barvu budou mít váhu poměrně nízkou.
+Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. V případě, kdy by se v daném intervalu \texttt{baseIndex-EPSILON..baseIndex+EPSILON} nacházely samé nulové hodnoty, je takový součet na závěr nahrazen nekonečnem. To zajišťuje, že obrázky, které nemají žádné body alespoň trochu podobné dané barvě, získávají největší váhu a~propadají se řazeným výsledkem dolů.
 
 Algoritmus se dá ladit volením hodnoty konstanty \texttt{EPSILON}. Subjektivně nejlepší výsledky algoritmus podává paradoxně při takové hodnotě, kdy se ve smyčce projde celá šířka histogramu.
 
 Zvolený algoritmus má jistě celou řadu menších či větších nedostatků, například není použita žádná metoda normalizace histogramů. To znamená, že obrázky menších rozměrů mají teoretickou výhodu, protože součet jejich histogramů by měl být menší. Jelikož však načítáme obrázky ze serveru Flickr, které všechny mají stejnou velikost, můžeme tento faktor zřejmě zanedbat.
 
-Na druhou stranu se nám subjektivně zdá, že pro zvolenou aplikaci běžící takřka v~reálném čase je algoritmus poměrně slušně použitelný a~z~námi vyzkoušených metod na vždy omezeném vzorku také v praxi relativně slušně použitelný. Je ale bohužel pravdou, že ne vždy jsou výsledky uspokojivé.
+Na druhou stranu se nám subjektivně zdá, že pro zvolenou aplikaci běžící takřka v~reálném čase je algoritmus poměrně slušně použitelný, ačkoliv poměrně často dochází k~jasně zřetelným anomáliím.
+
+\subsection{Komentované ukázky řazení obrázků}
+
+...screeny, zobrazeni histogramu pro spravne a spatne obrazky a komentar jejich vah...
+vyuzit ulozene ranky v docs adresari
 
 \section{Implementační poznámky}
 
-Google App Engine bohužel neumožňuje použití některých standardních knihoven a~tříd jazyka Java, a~proto jsme museli v~některých částech aplikace sáhnout k~náhradním řešení.
+Google App Engine bohužel neumožňuje použití některých standardních knihoven a~tříd jazyka Java, a~proto jsme museli v~některých částech aplikace sáhnout k~náhradním řešením.
 
 Naše aplikace tak například musí obsahovat vlastní implementaci dekodéru formátu JPEG, který jsme převzali z~\cite{Dersch}.
 
 \section{Závěr}
+
+trochu to funguje, ale neni to dokonale, pro on-line zpracovani to asi staci
 
 \renewcommand{\refname}{Literatura}
 \bibliographystyle{ieeetr}
