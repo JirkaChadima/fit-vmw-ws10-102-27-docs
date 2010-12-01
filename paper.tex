@@ -1,7 +1,7 @@
 \documentclass[12pt,oneside,a4paper]{article}   
 \usepackage[czech, english]{babel}
 \usepackage{amsmath}
-\usepackage{epsf,epic,eepic,eepicemu,url}
+\usepackage{epsf,epic,eepic,eepicemu,url,graphicx}
 \usepackage[utf8]{inputenc}
 
 %% code listings, pretty simple, but works quite ok :-)
@@ -38,11 +38,8 @@ Vzhledem k volbě programovacího jazyku bylo pro přístup k API služby Flickr
 \begin{listing}
 \begin{verbatim}
 Flickr flickr = new Flickr(API_KEY, SHARED_SECRET, new REST());
-
 SearchParameters sp = new SearchParameters();
-        
 sp.setText(keyword);
-
 PhotoList result = flickr.getPhotosInterface().search(sp, perPage, page);
 \end{verbatim}
 \end{listing}
@@ -56,7 +53,7 @@ V této souvislosti práce rovněž impelentuje jednoduchou cache, která uchov�
 \section{Hodnocení obrázků}
 Pro hodnocení a~řazení obrázků podle referenční barvy se nabízí relativně mnoho postupů a~algoritmů, my jsme se v~naší práci rozhodli zaměřit na rychlost a~zpracování výsledků pokud možno v~reálném čase. Běžnou praxí podobných vyhledávačů je totiž stažení nějakého většího vzorku obrázků, jejich off-line ohodnocení a~posléze uživateli nabízí jen vyhledávání v~této omezené databázi.
 
-Naše implementace se naopak snaží uživateli nabídnout vždy ty poslední fotografie k~daným klíčovým slovům, ačkoliv se některé vypočítané hodnoty ukládají do cache tak, aby časově náročné výpočty probíhaly pokud možno pro každou fotografii jen jednou.
+Naše implementace se naopak snaží uživateli nabídnout vždy ty poslední fotografie k~daným klíčovým slovům, ačkoliv se některé vypočítané hodnoty ukládají do databáze tak, aby časově náročné výpočty probíhaly pokud možno pro každou fotografii jen jednou.
 
 \subsection{Možnosti porovnávání}
 První možností, která se nabízí pro srovnávání barevnosti obrázků s~referenční barvou je metoda popsaná v~\cite{Mueller2k9}. Ta je založená na vytvoření omezené palety barev, na něž se mapuje barva jednotlivých pixelů v~obrázku. Po analýze pixelů tak vznikne histogram této omezené palety, pomocí něhož se dá spočítat vzdálenost různých obrázků vůči referenční barvě, která je rovněž namapována do základní omezené palety barev. Tato metoda se vyznačuje tím, že se výsledná sada obrázků dá velice snadno dále třídit podle dalších barev.
@@ -70,6 +67,7 @@ V~průběhu implementace jsme zkoušeli subjektivně porovnávat obě metody, a~
 Po získání výsledků vyhledávání ze serveru Flickr tak dochází k~výpočtu histogramu pro každý obrázek pro všechny tři kanály barevného prostoru RGB. Takto získaný histogram je uložen do databáze, kde se uchovává pro budoucí výpočty se stejným obrázkem.
 
 \subsection{Podobnost k referenční barvě}
+\label{sec:podobnost}
 
 Pro modelování podobnosti jsme zkoušeli několik metod s~různými úpravami, vždy jsme se však museli držet relativně nízké výpočetní náročnosti kvůli omezení na zpracování v~pseudo-reálném čase.
 
@@ -88,32 +86,60 @@ for (int i = baseIndex - EPSILON; i < baseIndex + EPSILON; i++) {
         (i - baseIndex == 0 ? 1 : Math.abs(i - baseIndex));
     ++values;
 }
-return (sum == 0.0 ? Double.MAX_VALUE : sum);
+return (sum / values == 0.0 ? Double.MAX_VALUE : sum / values);
 \end{verbatim}
 \end{listing}
 
-Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. V případě, kdy by se v daném intervalu \texttt{baseIndex-EPSILON..baseIndex+EPSILON} nacházely samé nulové hodnoty, je takový součet na závěr nahrazen nekonečnem. To zajišťuje, že obrázky, které nemají žádné body alespoň trochu podobné dané barvě, získávají největší váhu a~propadají se řazeným výsledkem dolů.
+Algoritmus projde \texttt{EPSILON} okolí referenční barvy a~postupně nasčítá násobky jednotlivých hodnot v~histogramu. Čím dále se pak hodnota nachází od referenční barvy, tím víckrát se do součtu započítává. V případě, kdy by se v daném intervalu \texttt{baseIndex-EPSILON..baseIndex+EPSILON} nacházely samé nulové hodnoty, je takový součet na závěr nahrazen nekonečnem. To zajišťuje, že obrázky, které nemají žádné body alespoň trochu podobné dané barvě, získávají největší váhu a~propadají se řazeným výsledkem dolů. Pos-lední operací je zprůměrování hodnot tak, abychom nemuseli pracovat s~ob-rovskými čísly. Jako nejpodobnější dané barvě je určen obrázek s~\textbf{nejmenší} vahou.
 
 Algoritmus se dá ladit volením hodnoty konstanty \texttt{EPSILON}. Subjektivně nejlepší výsledky algoritmus podává paradoxně při takové hodnotě, kdy se ve smyčce projde celá šířka histogramu.
 
-Zvolený algoritmus má jistě celou řadu menších či větších nedostatků, například není použita žádná metoda normalizace histogramů. To znamená, že obrázky menších rozměrů mají teoretickou výhodu, protože součet jejich histogramů by měl být menší. Jelikož však načítáme obrázky ze serveru Flickr, které všechny mají stejnou velikost, můžeme tento faktor zřejmě zanedbat.
+Zvolený algoritmus má jistě celou řadu menších či větších nedostatků, například není použita žádná metoda normalizace histogramů. To znamená, že obrázky menších rozměrů mají teoretickou výhodu, protože počet jejich pixelů je nižší. Jelikož však načítáme obrázky ze serveru Flickr, které všechny mají stejnou velikost, můžeme tento faktor zřejmě zanedbat.
 
-Na druhou stranu se nám subjektivně zdá, že pro zvolenou aplikaci běžící takřka v~reálném čase je algoritmus poměrně slušně použitelný, ačkoliv poměrně často dochází k~jasně zřetelným anomáliím.
+Na druhou stranu se nám subjektivně zdá, že pro zvolenou aplikaci běžící takřka v~reálném čase je algoritmus poměrně slušně použitelný, ačkoliv docela často dochází k~jasně zřetelným anomáliím.
 
-\subsection{Komentované ukázky řazení obrázků}
+\subsection{Komentovaná ukázka řazení obrázků}
 
-...screeny, zobrazeni histogramu pro spravne a spatne obrazky a komentar jejich vah...
-vyuzit ulozene ranky v docs adresari
+\begin{figure} \begin{center}
+\includegraphics[width=13.5cm]{figs/histogram1.png} \caption{Histogram prvního obrázku}
+\label{fig:manchild}
+\end{center} \end{figure}
+\begin{figure} \begin{center}
+\includegraphics[width=13.5cm]{figs/histogram6.png} \caption{Histogram šestého obrázku}
+\label{fig:borderflower}
+\end{center} \end{figure}
+Pro ilustraci výhod a~nevýhod algoritmu se nyní podívejme na konkrétní příklad řazení.
+
+Celkem řadíme devět obrázků, pro ukázku jsou pro dva konkrétní obrázky uvedeny na obr.~\ref{fig:manchild}~a~ obr.~\ref{fig:borderflower} tři RGB histogramy: normální, ohodnocený pro barvu \verb|#279AF2| a~ohodnocený pro barvu \verb|#362333|. Ohodnoceným histogramem zde rozumíme hodnoty vypočítané pomocí algoritmu uvedeného v~\ref{sec:podobnost}. Šedou čarou je poté vyznačena hodnota kanálu referenční barvy. Pod ohodonocenými histogramy je uvedena i~celková suma těchto hodnot, která vždy slouží jako váha obrázku. Je také nutné čtenáře upozornit, že osy $y$~jednotlivých histogramů mají odlišná měřítka.
+
+\begin{figure} \begin{center}
+\includegraphics[width=13.5cm]{figs/col01-flower-279af2-withcolor.png} \caption{Obrázky seřazené podle barvy \#279AF2}
+\label{fig:279af2}
+\end{center} \end{figure}
+\begin{figure} \begin{center}
+\includegraphics[width=13.5cm]{figs/col01-flower-362333-withcolor.png} \caption{Obrázky seřazené podle barvy \#362333}
+\label{fig:362333}
+\end{center} \end{figure}
+
+Jak dopadlo výsledné řazení se můžeme podívat na obrázcích \ref{fig:279af2} a~\ref{fig:362333}, kam jsme pro ilustraci doplnili čtverec vyplněný příslušnou barvou, podle které řadíme. Na ukázkových obrázcích \ref{fig:manchild} a~\ref{fig:borderflower} si nyní ukážeme, jak reálně funguje náš algoritmus.
+
+Už u~standardního histogramu je vidět veliký rozdíl v~rozmístění bodů na šíři histogramu. U~obr. \ref{fig:borderflower} vidíme velikou špici u černé barvy, kterou způsobuje černý pruh u~horního a~spodního okraje obrázku. Díky tomu, že v~jednom místě je hodnota výrazně vyšší, než v~těch ostatních, bude algoritmus dobře fungovat v~blízkosti tohoto místa, okolí daného bodu bude započítáno s~nejmenším koeficientem a~vzdálenější místa s~nižšími hodnotami nedají v~součinu tak velká čísla. Oproti tomu při rovnoměrném rozvrstvení hodnot histogramu nebude vzdálenost od referenčního bodu hrát příliš velkou roli.
+
+V~prvním řazení podle barvy \verb|#279AF2| je jako podobnější vyhodnocen obrázek \ref{fig:borderflower}. Je to dáno tím, že do výsledného součtu přispívá většinou malými čísly, jediným velkým číslem je vždy špice u~levého kraje histogramu. Fotografie \ref{fig:manchild} doplácí na to, že jediným ze tří histogramů, kde dochází k~výrazné změně rozložení jednotlivých podílů na výsledném součtu je červený kanál.
+
+U~řazení podle barvy \verb|#362333| se situace obrací. Na obr. \ref{fig:manchild} je krásně vidět, jak se v~modrém a~zeleném histogramu dramaticky změnilo rozdělení jednotlivých podílů na celkovém součtu, kdežto u~obrázku \ref{fig:borderflower} se prakticky nic nezměnilo. Tím, že jsme "trefili" skoro nejčastější barvu v~obrázku \ref{fig:manchild} jsme zajistili její nejnižší podíl na celkovém součtu a~tím v~podstatě i~nejnižší možný celkový součet.
+
+V~součtech u~obrázku \ref{fig:borderflower} si můžeme také všimnout vždy obrovského příspěv-ku modrého kanálu. Opět jde o~efekt jedné velké špice, která vždy přispěje velkou měrou do celkového součtu.
 
 \section{Implementační poznámky}
 
 Google App Engine bohužel neumožňuje použití některých standardních knihoven a~tříd jazyka Java, a~proto jsme museli v~některých částech aplikace sáhnout k~náhradním řešením.
 
-Naše aplikace tak například musí obsahovat vlastní implementaci dekodéru formátu JPEG, který jsme převzali z~\cite{Dersch}.
+Naše aplikace tak musí obsahovat vlastní implementaci dekodéru formátu JPEG, který jsme převzali z~\cite{Dersch}, protože GAE nepodporuje použití Javovské třídy BufferedImage.
 
 \section{Závěr}
 
-trochu to funguje, ale neni to dokonale, pro on-line zpracovani to asi staci
+TODO
 
 \renewcommand{\refname}{Literatura}
 \bibliographystyle{ieeetr}
