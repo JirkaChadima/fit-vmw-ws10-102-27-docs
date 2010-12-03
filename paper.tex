@@ -15,7 +15,7 @@
     \begin{Large}Flickr - feature-based reranking\end{Large}\\[3mm]
        Jiří Mašek (masekji4@fit.cvut.cz)\\
        Jiří Chadima (chadijir@fit.cvut.cz)\\
-9.\,12.\,2010
+4.\,12.\,2010
 \end{center}
 
 \section{Zadání}
@@ -32,8 +32,7 @@ Rozhodli jsme se použít programovací jazyk Java. Protože nedílnou součást
 Pro vývoj jsme použili verzovací systém git, konkrétně veřejně přístupný portál github.com \cite{official}. Pokud je v textu odkazováno k~nějaké vývojové větvi, naleznete ji právě tam.
 
 \section{Získávání obrázků ze serveru Flickr}
-
-Vzhledem k volbě programovacího jazyku bylo pro přístup k API služby Flickr nejjednodušším řešením využití existující knihovny flickrj \cite{flickrj}. Práce s ní je přitom velice jednoduchá, jak ukazuje následující příklad.
+Vzhledem k volbě programovacího jazyku bylo pro přístup k API služby Flickr nejjednodušším řešením využití existující knihovny flickrj \cite{flickrj}. Práce s~ní je přitom velice jednoduchá, jak ukazuje následující příklad.
 
 \begin{listing}
 \begin{verbatim}
@@ -46,7 +45,7 @@ PhotoList result = flickr.getPhotosInterface().search(sp, perPage, page);
 
 Výsledkem této sekvence kódu je seznam objektů vyhovujících zadaným parametrům a nacházejících se na dané straně při určeném počtu výsledků na jedné straně.
 
-Tyto objekty v sobě nesou bližší informace o konkrétní fotografii, kterou reprezentují. Jsou jimi např. identifikátor, rozměry, URL náhledů v různých velikostech, atd. Objekt taktéž obsahuje metody, které umožňují získat fotografii k dalšímu zpracování rovnou v podobě objektu BufferedImage.
+Tyto objekty v~sobě nesou bližší informace o konkrétní fotografii, kterou reprezentují. Jsou jimi např. identifikátor, rozměry, URL náhledů v~různých velikostech, atd. Objekt taktéž obsahuje metody, které umožňují získat fotografii k~dalšímu zpracování rovnou v~podobě objektu BufferedImage.
 
 V této souvislosti práce rovněž impelentuje jednoduchou cache, která uchovává posledních 50 výsledků hledání, čímž výrazně zrychluje její chod při opakování dotazu se stejným klíčovým slovem.
 
@@ -129,7 +128,9 @@ V~prvním řazení podle barvy \verb|#279AF2| je jako podobnější vyhodnocen o
 
 U~řazení podle barvy \verb|#362333| se situace obrací. Na obr. \ref{fig:manchild} je krásně vidět, jak se v~modrém a~zeleném histogramu dramaticky změnilo rozdělení jednotlivých podílů na celkovém součtu, kdežto u~obrázku \ref{fig:borderflower} se prakticky nic nezměnilo. Tím, že jsme "trefili" skoro nejčastější barvu v~obrázku \ref{fig:manchild} jsme zajistili její nejnižší podíl na celkovém součtu a~tím v~podstatě i~nejnižší možný celkový součet.
 
-V~součtech u~obrázku \ref{fig:borderflower} si můžeme také všimnout vždy obrovského příspěv-ku modrého kanálu. Opět jde o~efekt jedné velké špice, která vždy přispěje velkou měrou do celkového součtu.
+V~součtech u~obrázku \ref{fig:borderflower} si můžeme také všimnout vždy obrovského přís-pěvku modrého kanálu. Opět jde o~efekt jedné velké špice, která (skoro) vždy přispěje velkou měrou do celkového součtu.
+
+Velkou nevýhodou algoritmu je nezávislé posuzování tří kanálů barevného prostoru RGB. Při řazení může dojít k~situaci, kdy nás reálně zajimá řazení pouze podle jednoho kanálu (např. barva \verb|#FF0000|), díky tomu, že vahou je součet součtů všech kanálů nám do řazení zasáhnou i~zbylé dva kanály. Teoreticky zvýhodněny tak budou velmi tmavé obrázky, které obsahují hodně hodnot blízkých nule v~kanálech G~a~B. To může vést k~leckdy zavádějícím výsledkům.
 
 \section{Implementační poznámky}
 
@@ -139,7 +140,9 @@ Naše aplikace tak musí obsahovat vlastní implementaci dekodéru formátu JPEG
 
 \section{Závěr}
 
-TODO
+Myslíme si, že v~rámci semestrální práce se nám povedlo implementovat docela použitelný řadící algoritmus, který vyniká poměrně velkou rychlostí, jež je bohužel vykoupena relativně velkou nepřesností algoritmu. Použitá váha obrázku není zcela špatná a~po zapojení některých metod na eliminaci například velkých špicí v~histogramech by se její účinnost mohla ještě zlepšit.
+
+Aplikace je veřejně dostupná na \cite{liveApp}, zdrojové kódy jsou veřejně přístupné k nahlédnutí na \cite{official}.
 
 \renewcommand{\refname}{Literatura}
 \bibliographystyle{ieeetr}
